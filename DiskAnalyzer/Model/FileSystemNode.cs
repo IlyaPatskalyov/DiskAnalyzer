@@ -101,6 +101,8 @@ namespace DiskAnalyzer.Model
         internal void InsertNode([NotNull] string path, [NotNull] FileSystemNode node)
         {
             var parts = IoHelpers.SplitPath(path);
+            if (parts.Length != 2)
+                return;
             var parentNode = GetOrCreateChild(parts[0]);
             node.name = parts[1];
             node.parent = parentNode;
@@ -228,21 +230,27 @@ namespace DiskAnalyzer.Model
         [NotifyPropertyChangedInvocator]
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
+            if (PropertyChanged == null)
+                return;
+
             var args = new PropertyChangedEventArgs(propertyName);
             if (SynchronizationContext.Current == synchronizationContext)
-                PropertyChanged?.Invoke(this, args);
+                PropertyChanged.Invoke(this, args);
             else
-                synchronizationContext.Send(a => PropertyChanged?.Invoke(this, (PropertyChangedEventArgs) a), args);
+                synchronizationContext.Send(a => PropertyChanged.Invoke(this, (PropertyChangedEventArgs) a), args);
         }
 
 
         protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, FileSystemNode node = null)
         {
+            if (CollectionChanged == null)
+                return;
+
             var args = new NotifyCollectionChangedEventArgs(action, node);
             if (SynchronizationContext.Current == synchronizationContext)
-                CollectionChanged?.Invoke(this, args);
+                CollectionChanged.Invoke(this, args);
             else
-                synchronizationContext.Send(a => CollectionChanged?.Invoke(this, (NotifyCollectionChangedEventArgs) a), args);
+                synchronizationContext.Send(a => CollectionChanged.Invoke(this, (NotifyCollectionChangedEventArgs) a), args);
         }
     }
 }

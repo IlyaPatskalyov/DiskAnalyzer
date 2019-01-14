@@ -48,10 +48,7 @@
                 <ComboBox x:Name="Drives"
                           Margin="5, 10, 0, 0"
                           ItemTemplate="{StaticResource DriveDataTemplate}" Width="200"
-                          SelectionChanged="ChangeDrive"
-                          IsEditable="True"
-                          IsReadOnly="True"
-                          Text="-- Select Drive --" />
+                          SelectionChanged="ChangeDrive" />
             </TextBlock>
 
             <sd:SharpTreeView x:Name="TreeGrid"
@@ -97,7 +94,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate DataType="model:TreeGridFileNode">
                                         <StackPanel Orientation="Horizontal">
-                                            <Rectangle Fill="Purple" Stroke="LightGray"
+                                            <Rectangle Fill="{Binding Color}" Stroke="LightGray"
                                                        Margin="{Binding MarginPercentage}"
                                                        HorizontalAlignment="Right" Width="{Binding FilledWidth}"
                                                        Height="16" />

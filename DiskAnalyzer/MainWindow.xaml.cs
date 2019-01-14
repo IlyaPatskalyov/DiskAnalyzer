@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -8,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DiskAnalyzer.Core;
 using DiskAnalyzer.Model;
 using DiskAnalyzer.Statistics;
 using ICSharpCode.TreeView;
@@ -25,7 +25,7 @@ namespace DiskAnalyzer
         public MainWindow()
         {
             InitializeComponent();
-            progress.IsIndeterminate = true;
+            Progress.IsIndeterminate = true;
 
             DataContext = this;
             TopFilesBySize = new ObservableCollection<TopItem>();
@@ -36,7 +36,7 @@ namespace DiskAnalyzer
             TopFilesByCreationYear = new ObservableCollection<TopItem>();
 
             TreeGrid.ShowRoot = true;
-            drives.ItemsSource = DriveInfo.GetDrives().Where(d => d.IsReady).ToList();
+            Drives.ItemsSource = DriveInfo.GetDrives().Where(d => d.IsReady).ToList();
         }
 
         public ObservableCollection<TopItem> TopFilesBySize { get; set; }
@@ -48,7 +48,7 @@ namespace DiskAnalyzer
 
         private void Init()
         {
-            var driveInfo = drives.SelectedItem as DriveInfo;
+            var driveInfo = Drives.SelectedItem as DriveInfo;
             if (driveInfo == null) return;
 
             if (currentDriveInfo == driveInfo) return;
@@ -64,7 +64,7 @@ namespace DiskAnalyzer
             model = new FileSystemModel(driveInfo.Name, SynchronizationContext.Current);
             model.StartWatcher();
 
-            progress.Visibility = Visibility.Visible;
+            Progress.Visibility = Visibility.Visible;
             SetStatus($"Scanning drive: {model.Root.GetFullPath()} ...");
 
             var ts = new CancellationTokenSource();
@@ -72,10 +72,10 @@ namespace DiskAnalyzer
             Task.Run(() => model.Refresh(ts.Token))
                 .ContinueWith(t =>
                               {
-                                  progress.Visibility = Visibility.Collapsed;
+                                  Progress.Visibility = Visibility.Collapsed;
                                   SetStatus("Ready");
 
-                                  TreeGrid.Root = new FileNode(model.Root, level: 0);
+                                  TreeGrid.Root = new TreeGridFileNode(model.Root, level: 0);
                                   CalcTop(model.Root);
                               }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
 
@@ -101,7 +101,7 @@ namespace DiskAnalyzer
             statisticsCancellationTokenSource?.Cancel();
             var ts = new CancellationTokenSource();
 
-            progress.Visibility = Visibility.Visible;
+            Progress.Visibility = Visibility.Visible;
             SetStatus($"Analyzing: {root.GetFullPath()} ...");
 
             Task.WhenAll(
@@ -113,7 +113,7 @@ namespace DiskAnalyzer
                     CalcStatisticsAsync(root, new TopFilesByCreationYearCalculator(), TopFilesByCreationYear, ts))
                 .ContinueWith(a =>
                               {
-                                  progress.Visibility = Visibility.Collapsed;
+                                  Progress.Visibility = Visibility.Collapsed;
                                   SetStatus("Ready");
                               }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
 
@@ -141,7 +141,7 @@ namespace DiskAnalyzer
 
         internal void SetStatus(string text)
         {
-            status.Text = text;
+            Status.Text = text;
         }
 
         private void ChangeDrive(object sender, SelectionChangedEventArgs e)
@@ -152,11 +152,12 @@ namespace DiskAnalyzer
         private void TreeGridItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var treeViewItem = sender as SharpTreeViewItem;
-            if (treeViewItem != null)
-            {
-                var fileNode = (treeViewItem.Content as FileNode);
-                CalcTop(model.Root.Parent.GetChild(fileNode.FullPath));
-            }
+            if (treeViewItem == null) return;
+
+            var fileNode = (treeViewItem.Content as TreeGridFileNode);
+            if (fileNode == null) return;
+
+            CalcTop(model.Root.Parent.GetChild(fileNode.FullPath));
         }
 
         private void ListViewItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -165,11 +166,11 @@ namespace DiskAnalyzer
             if (listViewItem == null) return;
 
             var topItem = listViewItem.Content as TopItem;
-            var fileNode = ((FileNode) TreeGrid.Root).GetChild(
-                topItem.Path.Split(new[] {Path.DirectorySeparatorChar}, 2, StringSplitOptions.RemoveEmptyEntries)[1]);
+            if (topItem == null) return;
+
+            var fileNode = ((TreeGridFileNode) TreeGrid.Root).GetChild(IoHelpers.SplitPath(topItem.Path)[1]);
 
             if (fileNode == null) return;
-
 
             var item = TreeGrid.ItemContainerGenerator.ContainerFromItem(fileNode) as ListViewItem;
             if (item == null) return;

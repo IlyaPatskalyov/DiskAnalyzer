@@ -129,7 +129,7 @@ namespace DiskAnalyzer.Model
                         rootNode.GetOrCreateChild(f.FullName).UpdateInfo(FileType.File, f.Length, f.CreationTime);
                     }
                 }
-                catch (UnauthorizedAccessException)
+                catch
                 {
                 }
             }

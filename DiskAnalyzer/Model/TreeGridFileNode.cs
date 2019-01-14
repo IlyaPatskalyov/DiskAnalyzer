@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using DiskAnalyzer.Core;
 using ICSharpCode.TreeView;
 
@@ -11,6 +12,12 @@ namespace DiskAnalyzer.Model
 {
     public class TreeGridFileNode : SharpTreeNode
     {
+        private static Color[] colors = typeof(Colors).GetProperties()
+                                                      .Where(p => p.Name.StartsWith("Dark"))
+                                                      .Select(p => p.GetValue(null))
+                                                      .Cast<Color>()
+                                                      .ToArray();
+
         private readonly int level;
         private readonly FileSystemNode node;
         private string fullPath;
@@ -61,6 +68,8 @@ namespace DiskAnalyzer.Model
 
         public string FullPath => fullPath;
         public string DirectoryPath => node.FileType == FileType.File ? Path.GetDirectoryName(FullPath) : FullPath;
+
+        public Brush Color => new SolidColorBrush(colors[level.GetHashCode() % colors.Length]);
 
         protected override void LoadChildren()
         {
