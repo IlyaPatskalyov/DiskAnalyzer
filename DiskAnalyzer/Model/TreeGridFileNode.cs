@@ -22,14 +22,13 @@ namespace DiskAnalyzer.Model
         private readonly FileSystemModel model;
         private readonly FileSystemNode node;
         private string fullPath;
-        private long lastChangeTimeTicks;
 
         public TreeGridFileNode(FileSystemModel model)
             : this(model, model.Root, level: 0)
         {
         }
 
-        public TreeGridFileNode(FileSystemModel model, FileSystemNode node, int level)
+        private TreeGridFileNode(FileSystemModel model, FileSystemNode node, int level)
         {
             this.model = model;
             this.node = node;
@@ -38,11 +37,6 @@ namespace DiskAnalyzer.Model
 
             this.node.PropertyChanged += (n, args) =>
                                          {
-                                             var now = DateTime.UtcNow.Ticks;
-                                             if (model.InProcess && (now - lastChangeTimeTicks) < 50 * 10000)
-                                                 return;
-
-                                             lastChangeTimeTicks = now;
                                              if (args.PropertyName == nameof(FileSystemNode.Size))
                                              {
                                                  RaisePropertyChanged(nameof(Size));

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using DiskAnalyzer.Core;
 using JetBrains.Annotations;
 
@@ -16,6 +17,7 @@ namespace DiskAnalyzer.Model
 {
     public class FileSystemNode : IEnumerable<FileSystemNode>, INotifyCollectionChanged, INotifyPropertyChanged
     {
+        private readonly FileSystemModel model;
         private readonly SynchronizationContext synchronizationContext;
 
         private ConcurrentDictionary<string, FileSystemNode> children;
@@ -23,13 +25,16 @@ namespace DiskAnalyzer.Model
         private volatile int countFiles;
         private DateTime? creationTime;
         private volatile FileType fileType;
+
+        private long lastChangeTimeTicks;
         private string name;
         private FileSystemNode parent;
         private long size;
 
-        public FileSystemNode(SynchronizationContext synchronizationContext)
+        public FileSystemNode(SynchronizationContext synchronizationContext, FileSystemModel model)
         {
             this.synchronizationContext = synchronizationContext;
+            this.model = model;
         }
 
         [CanBeNull] public string Name => name;
@@ -170,7 +175,7 @@ namespace DiskAnalyzer.Model
         {
             var parts = IoHelpers.SplitPath(path);
             children = children ?? new ConcurrentDictionary<string, FileSystemNode>();
-            var child = children.GetOrAdd(parts[0], v => new FileSystemNode(synchronizationContext)
+            var child = children.GetOrAdd(parts[0], v => new FileSystemNode(synchronizationContext, model)
                                                          {
                                                              name = v,
                                                              parent = this
@@ -244,11 +249,18 @@ namespace DiskAnalyzer.Model
             if (PropertyChanged == null)
                 return;
 
+            var now = DateTime.UtcNow.Ticks;
+            if (model.InProcess && (now - lastChangeTimeTicks) < 50 * 10000)
+                return;
+
+            lastChangeTimeTicks = now;
+
+
             var args = new PropertyChangedEventArgs(propertyName);
             if (SynchronizationContext.Current == synchronizationContext)
                 PropertyChanged.Invoke(this, args);
             else
-                synchronizationContext.Send(a => PropertyChanged.Invoke(this, (PropertyChangedEventArgs) a), args);
+                Task.Run(() => synchronizationContext.Send(a => PropertyChanged.Invoke(this, (PropertyChangedEventArgs) a), args));
         }
 
 
@@ -261,7 +273,7 @@ namespace DiskAnalyzer.Model
             if (SynchronizationContext.Current == synchronizationContext)
                 CollectionChanged.Invoke(this, args);
             else
-                synchronizationContext.Send(a => CollectionChanged.Invoke(this, (NotifyCollectionChangedEventArgs) a), args);
+                Task.Run(() => synchronizationContext.Send(a => CollectionChanged.Invoke(this, (NotifyCollectionChangedEventArgs) a), args));
         }
     }
 }

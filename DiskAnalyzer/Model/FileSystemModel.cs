@@ -14,7 +14,7 @@ namespace DiskAnalyzer.Model
 
         public FileSystemModel(string rootPath, SynchronizationContext synchronizationContext)
         {
-            rootNode = new FileSystemNode(synchronizationContext);
+            rootNode = new FileSystemNode(synchronizationContext, this);
             this.rootPath = rootPath;
             fileSystemWatcher = CreateWatcher();
         }
