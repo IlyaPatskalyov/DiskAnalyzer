@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Model
 {
@@ -49,7 +50,7 @@ namespace DiskAnalyzer.Model
 
         private void FileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
         {
-            rootNode.GetOrCreateChild(e.OldFullPath).UpdateInfo(FileType.Unknown, 0, newCreationTime: null);
+            rootNode.GetOrCreateChild(e.OldFullPath).UpdateInfo(FileType.Unknown, newSize: 0, newCreationTime: null);
             var fileInfo = new FileInfo(e.FullPath);
             var dirInfo = new DirectoryInfo(e.FullPath);
             fileInfo.Refresh();
@@ -71,7 +72,7 @@ namespace DiskAnalyzer.Model
 
         private void FileSystemWatcher_Deleted(object sender, FileSystemEventArgs e)
         {
-            rootNode.GetOrCreateChild(e.FullPath).UpdateInfo(FileType.Unknown, 0, newCreationTime: null);
+            rootNode.GetOrCreateChild(e.FullPath).UpdateInfo(FileType.Unknown, newSize: 0, newCreationTime: null);
         }
 
         private void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
@@ -95,17 +96,20 @@ namespace DiskAnalyzer.Model
             if (fileInfo.Exists)
                 rootNode.GetOrCreateChild(e.FullPath).UpdateInfo(FileType.File, fileInfo.Length, fileInfo.CreationTime);
             else if (dirInfo.Exists)
-                rootNode.GetOrCreateChild(e.FullPath).UpdateInfo(FileType.Directory, 0, dirInfo.CreationTime);
+            {
+                rootNode.GetOrCreateChild(e.FullPath).UpdateInfo(FileType.Directory, newSize:0, dirInfo.CreationTime);
+                Scan(e.FullPath, new CancellationTokenSource().Token);
+            }
         }
 
         public void Refresh(CancellationToken tsToken)
         {
             inProcess = true;
-            Initialize(rootPath, tsToken);
+            Scan(rootPath, tsToken);
             inProcess = false;
         }
 
-        private void Initialize(string path, CancellationToken tsToken)
+        private void Scan([NotNull] string path, CancellationToken tsToken)
         {
             rootNode.GetChild(path)?.CleanupNode();
             var queue = new Queue<DirectoryInfo>();
