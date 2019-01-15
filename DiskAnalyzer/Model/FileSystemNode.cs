@@ -19,10 +19,10 @@ namespace DiskAnalyzer.Model
         private readonly SynchronizationContext synchronizationContext;
 
         private ConcurrentDictionary<string, FileSystemNode> children;
-        private int countDirectories;
-        private int countFiles;
+        private volatile int countDirectories;
+        private volatile int countFiles;
         private DateTime? creationTime;
-        private FileType fileType;
+        private volatile FileType fileType;
         private string name;
         private FileSystemNode parent;
         private long size;
@@ -140,6 +140,17 @@ namespace DiskAnalyzer.Model
             return null;
         }
 
+        internal void CleanupNode()
+        {
+            children?.Clear();
+            UpdateCounters(-size, -countDirectories, -countFiles);
+            if (creationTime.HasValue)
+            {
+                creationTime = null;
+                OnPropertyChanged(nameof(CreationTime));
+            }
+        }
+
         [CanBeNull]
         public FileSystemNode GetChild([NotNull] string path)
         {
@@ -210,19 +221,19 @@ namespace DiskAnalyzer.Model
         {
             if (deltaSize != 0)
             {
-                size += deltaSize;
+                Interlocked.Add(ref size, deltaSize);
                 OnPropertyChanged(nameof(Size));
             }
 
             if (deltaDirectories != 0)
             {
-                countDirectories += deltaDirectories;
+                Interlocked.Add(ref countDirectories, deltaDirectories);
                 OnPropertyChanged(nameof(CountDirectories));
             }
 
             if (deltaFiles != 0)
             {
-                countFiles += deltaFiles;
+                Interlocked.Add(ref countFiles, deltaFiles);
                 OnPropertyChanged(nameof(CountFiles));
             }
         }

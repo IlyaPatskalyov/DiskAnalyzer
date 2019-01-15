@@ -11,14 +11,17 @@ namespace DiskAnalyzer.Statistics
         {
             return node.Search()
                        .Where(r => r.FileType == FileType.File)
+                       .OrderByDescending(a => a.Size)
                        .GroupBy(r => Path.GetExtension(r.Name)?.ToLower())
                        .Select(r => new TopItem()
                                     {
                                         Name = string.IsNullOrEmpty(r.Key) ? "*" : r.Key,
+                                        Path = r.First().GetFullPath(),
                                         Size = r.Sum(n => n.Size),
                                         CountFiles = r.Count(),
                                     })
-                       .OrderByDescending(a => a.Size);
+                       .OrderByDescending(a => a.Size)
+                       .Take(200);
         }
     }
 }

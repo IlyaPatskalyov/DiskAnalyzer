@@ -21,7 +21,8 @@ namespace DiskAnalyzer.Statistics
                                         Path = r.GetFullPath(),
                                         Size = r.Size,
                                         CountFiles = r.CountFiles,
-                                    });
+                                    })
+                       .Take(50);
         }
     }
 }

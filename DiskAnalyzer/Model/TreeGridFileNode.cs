@@ -31,13 +31,22 @@ namespace DiskAnalyzer.Model
             this.node.PropertyChanged += (n, args) =>
                                          {
                                              if (args.PropertyName == nameof(FileSystemNode.Size))
-                                                 RaisePropertyChanged(nameof(SizeCaption));
+                                             {
+                                                 RaisePropertyChanged(nameof(Size));
+                                                 RaisePropertyChanged(nameof(FilledPercent));
+                                                 RaisePropertyChanged(nameof(FreePercent));
+                                             }
+
                                              if (args.PropertyName == nameof(FileSystemNode.CountFiles))
                                                  RaisePropertyChanged(nameof(CountFiles));
                                              if (args.PropertyName == nameof(FileSystemNode.CountDirectories))
                                                  RaisePropertyChanged(nameof(CountDirectories));
                                          };
-            this.node.CollectionChanged += (n, args) => LoadChildren();
+            this.node.CollectionChanged += (n, args) =>
+                                           {
+                                               if (IsExpanded)
+                                                   LoadChildren();
+                                           };
             fullPath = this.node.GetFullPath();
             LazyLoading = node.FileType != FileType.File;
         }
@@ -50,21 +59,13 @@ namespace DiskAnalyzer.Model
 
         public override object ToolTip => fullPath;
 
-        public string SizeCaption => node.Size.FormatSize();
-
-        public long Size => node.Size;
+        public string Size => node.Size.FormatSize();
+        public string CountFiles => (node.CountFiles > 0 ? node.CountFiles : (int?) null)?.FormatNumber();
+        public string CountDirectories => (node.CountDirectories > 0 ? node.CountDirectories : (int?) null)?.FormatNumber();
 
         public Thickness MarginPercentage => new Thickness((1 - Math.Pow(0.9, level)) * 100, 0, 0, 0);
-
-        public double FilledWidth => ((double) node.Size / node.Parent.Size) * Math.Pow(0.9, level) * 100;
-
-        public double FreeWidth => (1 - (double) node.Size / node.Parent.Size) * Math.Pow(0.9, level) * 100;
-
-        public int? CountFiles => node.CountFiles > 0 ? node.CountFiles : (int?) null;
-        public string CountFilesCaption => CountFiles?.FormatNumber();
-        public int? CountDirectories => node.CountDirectories > 0 ? node.CountDirectories : (int?) null;
-        public string CountDirectoriesCaption => CountDirectories?.FormatNumber();
-
+        public double FilledPercent => ((double) node.Size / node.Parent.Size) * Math.Pow(0.9, level) * 100;
+        public double FreePercent => (1 - (double) node.Size / node.Parent.Size) * Math.Pow(0.9, level) * 100;
 
         public string FullPath => fullPath;
         public string DirectoryPath => node.FileType == FileType.File ? Path.GetDirectoryName(FullPath) : FullPath;
@@ -74,7 +75,7 @@ namespace DiskAnalyzer.Model
         protected override void LoadChildren()
         {
             Children.Clear();
-            foreach (var p in node.Children.OrderByDescending(r => r.FileType).ThenByDescending(r => r.Size))
+            foreach (var p in node.Children.OrderByDescending(r => r.FileType).ThenBy(r => r.Name))
                 Children.Add(new TreeGridFileNode(p, level + 1));
         }
 

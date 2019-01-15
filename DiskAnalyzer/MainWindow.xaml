@@ -69,7 +69,7 @@
                                             Width="{Binding ElementName=TreeSizeHelperField, Path=ActualWidth}">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate DataType="model:TreeGridFileNode">
-                                        <TextBlock Text="{Binding SizeCaption}" TextAlignment="Right" />
+                                        <TextBlock Text="{Binding Size}" TextAlignment="Right" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -77,7 +77,7 @@
                                             Width="{Binding ElementName=TreeCountFilesHelperField, Path=ActualWidth}">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate DataType="model:TreeGridFileNode">
-                                        <TextBlock Text="{Binding CountFilesCaption}" TextAlignment="Right" />
+                                        <TextBlock Text="{Binding CountFiles}" TextAlignment="Right" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -85,7 +85,7 @@
                                             Width="{Binding ElementName=TreeCountDirectoriesHelperField, Path=ActualWidth}">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate DataType="model:TreeGridFileNode">
-                                        <TextBlock Text="{Binding CountDirectoriesCaption}" TextAlignment="Right" />
+                                        <TextBlock Text="{Binding CountDirectories}" TextAlignment="Right" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -96,10 +96,10 @@
                                         <StackPanel Orientation="Horizontal">
                                             <Rectangle Fill="{Binding Color}" Stroke="LightGray"
                                                        Margin="{Binding MarginPercentage}"
-                                                       HorizontalAlignment="Right" Width="{Binding FilledWidth}"
+                                                       HorizontalAlignment="Right" Width="{Binding FilledPercent}"
                                                        Height="16" />
                                             <Rectangle Fill="LightGray" Stroke="LightGray"
-                                                       HorizontalAlignment="Right" Width="{Binding FreeWidth}"
+                                                       HorizontalAlignment="Right" Width="{Binding FreePercent}"
                                                        Height="16" />
                                         </StackPanel>
                                     </DataTemplate>
@@ -132,31 +132,56 @@
                         <TextBlock Margin="3">Top 50 files by size</TextBlock>
                     </TabItem.Header>
                     <TabItem.Content>
-                        <ListView
-                            ItemsSource="{Binding TopFilesBySize}"
-                            IsSynchronizedWithCurrentItem="True">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="Path"
-                                                    DisplayMemberBinding="{Binding Name}" />
-                                    <GridViewColumn Header="Size">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate DataType="model:TopItem">
-                                                <TextBlock Text="{Binding SizeCaption}" TextAlignment="Right" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                    <EventSetter Event="PreviewMouseLeftButtonDown"
-                                                 Handler="ListViewItem_PreviewMouseLeftButtonDown" />
+                        <Grid>
+                            <Grid Visibility="Hidden">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" x:Name="StatGridNameHelperField" />
+                                <Grid Grid.Column="1" x:Name="StatGridValueHelperField" />
+                                <Grid Grid.Column="1" x:Name="StatGridSecondValueHelperField" />
+                            </Grid>
+                            <ListView
+                                ItemsSource="{Binding TopFilesBySize}"
+                                IsSynchronizedWithCurrentItem="True">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Path"
+                                                        Width="{Binding ElementName=StatGridNameHelperField, Path=ActualWidth}">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate DataType="model:TopItem">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Image Source="{Binding Icon}" Margin="0, 0, 5, 0" Width="16"
+                                                               Height="16" />
+                                                        <TextBlock Text="{Binding Name}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Size"
+                                                        Width="{Binding ElementName=StatGridValueHelperField, Path=ActualWidth}">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate DataType="model:TopItem">
 
-                                </Style>
-                            </ListView.ItemContainerStyle>
-                        </ListView>
+                                                    <TextBlock Text="{Binding SizeCaption}" TextAlignment="Right" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <EventSetter Event="PreviewMouseLeftButtonDown"
+                                                     Handler="ListViewItem_PreviewMouseLeftButtonDown" />
+
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
+                        </Grid>
                     </TabItem.Content>
                 </TabItem>
                 <TabItem>
@@ -170,8 +195,19 @@
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="Path"
-                                                    DisplayMemberBinding="{Binding Name}" />
-                                    <GridViewColumn Header="Size">
+                                                    Width="{Binding ElementName=StatGridNameHelperField, Path=ActualWidth}">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="model:TopItem">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="{Binding Icon}" Margin="0, 0, 5, 0" Width="16"
+                                                           Height="16" />
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Size"
+                                                    Width="{Binding ElementName=StatGridValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding SizeCaption}" TextAlignment="Right" />
@@ -202,8 +238,19 @@
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="Path"
-                                                    DisplayMemberBinding="{Binding Name}" />
-                                    <GridViewColumn Header="Count Files">
+                                                    Width="{Binding ElementName=StatGridNameHelperField, Path=ActualWidth}">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="model:TopItem">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="{Binding Icon}" Margin="0, 0, 5, 0" Width="16"
+                                                           Height="16" />
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Count Files"
+                                                    Width="{Binding ElementName=StatGridValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding CountFilesCaption}" TextAlignment="Right" />
@@ -234,15 +281,27 @@
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="Name"
-                                                    DisplayMemberBinding="{Binding Name}" />
-                                    <GridViewColumn Header="Size">
+                                                    Width="{Binding ElementName=StatGridNameHelperField, Path=ActualWidth}">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="model:TopItem">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="{Binding Icon}" Margin="0, 0, 5, 0" Width="16"
+                                                           Height="16" />
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Size"
+                                                    Width="{Binding ElementName=StatGridValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding SizeCaption}" TextAlignment="Right" />
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="Count Files">
+                                    <GridViewColumn Header="Count Files"
+                                                    Width="{Binding ElementName=StatGridSecondValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding CountFilesCaption}" TextAlignment="Right" />
@@ -260,26 +319,38 @@
                         </ListView>
                     </TabItem.Content>
                 </TabItem>
-                <TabItem>
+                 <TabItem>
                     <TabItem.Header>
-                        <TextBlock Margin="3">Top owners</TextBlock>
+                        <TextBlock Margin="3">Top mime types</TextBlock>
                     </TabItem.Header>
                     <TabItem.Content>
                         <ListView
-                            ItemsSource="{Binding TopFileOwners}"
+                            ItemsSource="{Binding TopMimeTypes}"
                             IsSynchronizedWithCurrentItem="True">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="Name"
-                                                    DisplayMemberBinding="{Binding Name}" />
-                                    <GridViewColumn Header="Size">
+                                                    Width="{Binding ElementName=StatGridNameHelperField, Path=ActualWidth}">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="model:TopItem">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="{Binding Icon}" Margin="0, 0, 5, 0" Width="16"
+                                                           Height="16" />
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Size"
+                                                    Width="{Binding ElementName=StatGridValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding SizeCaption}" TextAlignment="Right" />
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="Count Files">
+                                    <GridViewColumn Header="Count Files"
+                                                    Width="{Binding ElementName=StatGridSecondValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding CountFilesCaption}" TextAlignment="Right" />
@@ -299,7 +370,7 @@
                 </TabItem>
                 <TabItem>
                     <TabItem.Header>
-                        <TextBlock Margin="3">Top 50 files by creation year</TextBlock>
+                        <TextBlock Margin="3">Top by creation year</TextBlock>
                     </TabItem.Header>
                     <TabItem.Content>
                         <ListView
@@ -308,15 +379,18 @@
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="Name"
+                                                    Width="{Binding ElementName=StatGridNameHelperField, Path=ActualWidth}"
                                                     DisplayMemberBinding="{Binding Name}" />
-                                    <GridViewColumn Header="Size">
+                                    <GridViewColumn Header="Size"
+                                                    Width="{Binding ElementName=StatGridValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding SizeCaption}" TextAlignment="Right" />
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="Count Files">
+                                    <GridViewColumn Header="Count Files"
+                                                    Width="{Binding ElementName=StatGridSecondValueHelperField, Path=ActualWidth}">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="model:TopItem">
                                                 <TextBlock Text="{Binding CountFilesCaption}" TextAlignment="Right" />
@@ -343,7 +417,7 @@
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="Status" Height="24" Grid.Row="0" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="1">
-                <ProgressBar Width="150" Visibility="Collapsed" x:Name="Progress" Minimum="0" Maximum="100" />
+                <ProgressBar Width="300" Visibility="Collapsed" x:Name="Progress" Minimum="0" Maximum="100" />
             </StackPanel>
         </Grid>
     </Grid>

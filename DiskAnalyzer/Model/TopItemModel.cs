@@ -1,3 +1,4 @@
+using System.Windows.Media.Imaging;
 using DiskAnalyzer.Core;
 
 namespace DiskAnalyzer.Model
@@ -7,6 +8,8 @@ namespace DiskAnalyzer.Model
         public string Name { get; set; }
 
         public string Path { get; set; }
+
+        public BitmapSource Icon => Path != null ? IconHelpers.GetIconDll(Path) : null;
 
         public long Size { get; set; }
 

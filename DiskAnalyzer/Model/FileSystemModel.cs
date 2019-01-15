@@ -10,6 +10,7 @@ namespace DiskAnalyzer.Model
         private readonly FileSystemWatcher fileSystemWatcher;
         private readonly FileSystemNode rootNode;
         private readonly string rootPath;
+        private volatile bool inProcess;
 
         public FileSystemModel(string rootPath, SynchronizationContext synchronizationContext)
         {
@@ -19,6 +20,8 @@ namespace DiskAnalyzer.Model
         }
 
         public FileSystemNode Root => rootNode.GetOrCreateChild(rootPath);
+
+        public bool InProcess => inProcess;
 
         public void Dispose()
         {
@@ -97,12 +100,14 @@ namespace DiskAnalyzer.Model
 
         public void Refresh(CancellationToken tsToken)
         {
+            inProcess = true;
             Initialize(rootPath, tsToken);
+            inProcess = false;
         }
 
         private void Initialize(string path, CancellationToken tsToken)
         {
-            rootNode.RemoveNode(path);
+            rootNode.GetChild(path)?.CleanupNode();
             var queue = new Queue<DirectoryInfo>();
             queue.Enqueue(new DirectoryInfo(path));
 

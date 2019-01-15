@@ -28,23 +28,52 @@ namespace DiskAnalyzer
             Progress.IsIndeterminate = true;
 
             DataContext = this;
+            DriveInfos = new ObservableCollection<DriveInfo>();
             TopFilesBySize = new ObservableCollection<TopItem>();
             TopDirectoriesBySize = new ObservableCollection<TopItem>();
             TopDirectoriesByFilesCount = new ObservableCollection<TopItem>();
             TopExtensions = new ObservableCollection<TopItem>();
-            TopFileOwners = new ObservableCollection<TopItem>();
+            TopMimeTypes = new ObservableCollection<TopItem>();
             TopFilesByCreationYear = new ObservableCollection<TopItem>();
 
+            Drives.ItemsSource = DriveInfos;
+            UpdateDrives();
             TreeGrid.ShowRoot = true;
-            Drives.ItemsSource = DriveInfo.GetDrives().Where(d => d.IsReady).ToList();
+
+            var synchronizationContext = SynchronizationContext.Current;
+            var timer = new System.Timers.Timer();
+            timer.Elapsed += (v, e) => synchronizationContext.Send(a => UpdateDrives(), v);
+            timer.Interval = 5000;
+            timer.Enabled = true;
         }
 
-        public ObservableCollection<TopItem> TopFilesBySize { get; set; }
-        public ObservableCollection<TopItem> TopDirectoriesBySize { get; set; }
-        public ObservableCollection<TopItem> TopDirectoriesByFilesCount { get; set; }
-        public ObservableCollection<TopItem> TopExtensions { get; set; }
-        public ObservableCollection<TopItem> TopFileOwners { get; set; }
-        public ObservableCollection<TopItem> TopFilesByCreationYear { get; set; }
+
+        public ObservableCollection<DriveInfo> DriveInfos { get; }
+        public ObservableCollection<TopItem> TopFilesBySize { get; }
+        public ObservableCollection<TopItem> TopDirectoriesBySize { get; }
+        public ObservableCollection<TopItem> TopDirectoriesByFilesCount { get; }
+        public ObservableCollection<TopItem> TopExtensions { get; }
+        public ObservableCollection<TopItem> TopMimeTypes { get; }
+        public ObservableCollection<TopItem> TopFilesByCreationYear { get; }
+
+        private void UpdateDrives()
+        {
+            var newValues = DriveInfo.GetDrives().Where(d => d.IsReady).ToArray();
+
+            var newDriveInfos = newValues.Select((drive, index) => new {Drive = drive.Name, Index = index}).ToDictionary(k => k.Drive, v => v.Index);
+            var oldDriveInfos = DriveInfos.Select((drive, index) => new {Drive = drive.Name, Index = index}).ToDictionary(k => k.Drive, v => v.Index);
+
+            foreach (var name in oldDriveInfos.Keys.Except(newDriveInfos.Keys))
+            {
+                DriveInfos.RemoveAt(oldDriveInfos[name]);
+            }
+
+            foreach (var name in newDriveInfos.Keys.Except(oldDriveInfos.Keys))
+            {
+                var index = newDriveInfos[name];
+                DriveInfos.Insert(index, newValues[index]);
+            }
+        }
 
         private void Init()
         {
@@ -63,6 +92,8 @@ namespace DiskAnalyzer
 
             model = new FileSystemModel(driveInfo.Name, SynchronizationContext.Current);
             model.StartWatcher();
+
+            TreeGrid.Root = new TreeGridFileNode(model.Root, level: 0);
 
             Progress.Visibility = Visibility.Visible;
             SetStatus($"Scanning drive: {model.Root.GetFullPath()} ...");
@@ -89,7 +120,7 @@ namespace DiskAnalyzer
             TopDirectoriesBySize.Clear();
             TopDirectoriesByFilesCount.Clear();
             TopExtensions.Clear();
-            TopFileOwners.Clear();
+            TopMimeTypes.Clear();
             TopFilesByCreationYear.Clear();
         }
 
@@ -109,7 +140,7 @@ namespace DiskAnalyzer
                     CalcStatisticsAsync(root, new TopDirectoriesBySizeCalculator(), TopDirectoriesBySize, ts),
                     CalcStatisticsAsync(root, new TopDirectoriesByFilesCountCalculator(), TopDirectoriesByFilesCount, ts),
                     CalcStatisticsAsync(root, new TopExtensionsCalculator(), TopExtensions, ts),
-                    CalcStatisticsAsync(root, new TopOwnersCalculator(), TopFileOwners, ts),
+                    CalcStatisticsAsync(root, new TopMimeTypesCalculator(), TopMimeTypes, ts),
                     CalcStatisticsAsync(root, new TopFilesByCreationYearCalculator(), TopFilesByCreationYear, ts))
                 .ContinueWith(a =>
                               {
@@ -124,7 +155,7 @@ namespace DiskAnalyzer
                                          CancellationTokenSource ts)
         {
             observableCollection.Clear();
-            return Task.Run(() => calculator.Calculate(root).Take(50).ToList(), ts.Token)
+            return Task.Run(() => calculator.Calculate(root).ToList(), ts.Token)
                        .ContinueWith(async t => SetCollection(observableCollection, await t),
                                      TaskScheduler.FromCurrentSynchronizationContext());
         }
@@ -151,6 +182,8 @@ namespace DiskAnalyzer
 
         private void TreeGridItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (model.InProcess) return;
+
             var treeViewItem = sender as SharpTreeViewItem;
             if (treeViewItem == null) return;
 
