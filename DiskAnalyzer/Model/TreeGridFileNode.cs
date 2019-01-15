@@ -19,17 +19,30 @@ namespace DiskAnalyzer.Model
                                                       .ToArray();
 
         private readonly int level;
+        private readonly FileSystemModel model;
         private readonly FileSystemNode node;
         private string fullPath;
+        private long lastChangeTimeTicks;
 
-        public TreeGridFileNode(FileSystemNode node, int level)
+        public TreeGridFileNode(FileSystemModel model)
+            : this(model, model.Root, level: 0)
         {
+        }
+
+        public TreeGridFileNode(FileSystemModel model, FileSystemNode node, int level)
+        {
+            this.model = model;
             this.node = node;
             this.level = level;
 
 
             this.node.PropertyChanged += (n, args) =>
                                          {
+                                             var now = DateTime.UtcNow.Ticks;
+                                             if (model.InProcess && (now - lastChangeTimeTicks) < 50 * 10000)
+                                                 return;
+
+                                             lastChangeTimeTicks = now;
                                              if (args.PropertyName == nameof(FileSystemNode.Size))
                                              {
                                                  RaisePropertyChanged(nameof(Size));
@@ -76,7 +89,7 @@ namespace DiskAnalyzer.Model
         {
             Children.Clear();
             foreach (var p in node.Children.OrderByDescending(r => r.FileType).ThenBy(r => r.Name))
-                Children.Add(new TreeGridFileNode(p, level + 1));
+                Children.Add(new TreeGridFileNode(model, p, level + 1));
         }
 
         public TreeGridFileNode GetChild(string path)

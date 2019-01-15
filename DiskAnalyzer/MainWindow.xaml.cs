@@ -93,7 +93,7 @@ namespace DiskAnalyzer
             model = new FileSystemModel(driveInfo.Name, SynchronizationContext.Current);
             model.StartWatcher();
 
-            TreeGrid.Root = new TreeGridFileNode(model.Root, level: 0);
+            TreeGrid.Root = new TreeGridFileNode(model);
 
             Progress.Visibility = Visibility.Visible;
             SetStatus($"Scanning drive: {model.Root.GetFullPath()} ...");
@@ -106,7 +106,7 @@ namespace DiskAnalyzer
                                   Progress.Visibility = Visibility.Collapsed;
                                   SetStatus("Ready");
 
-                                  TreeGrid.Root = new TreeGridFileNode(model.Root, level: 0);
+                                  TreeGrid.Root = new TreeGridFileNode(model);
                                   CalcTop(model.Root);
                               }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
 
