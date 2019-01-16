@@ -7,13 +7,13 @@ namespace DiskAnalyzer.Statistics
 {
     public class TopMimeTypesCalculator : IStatisticsCalculator
     {
-        public IEnumerable<TopItem> Calculate(FileSystemNode node)
+        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)
         {
             return node.Search()
                        .Where(r => r.FileType == FileType.File)
                        .OrderByDescending(a => a.Size)
                        .GroupBy(r => MimeMapping.GetMimeMapping(r.Name))
-                       .Select(r => new TopItem()
+                       .Select(r => new StatisticsItem()
                                     {
                                         Name = r.Key,
                                         Path = r.First().GetFullPath(),

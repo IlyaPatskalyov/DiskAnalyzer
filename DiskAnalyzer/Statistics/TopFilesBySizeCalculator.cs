@@ -6,12 +6,12 @@ namespace DiskAnalyzer.Statistics
 {
     public class TopFilesBySizeCalculator : IStatisticsCalculator
     {
-        public IEnumerable<TopItem> Calculate(FileSystemNode node)
+        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)
         {
             return node.Search()
                        .Where(r => r.FileType == FileType.File)
                        .OrderByDescending(a => a.Size)
-                       .Select(r => new TopItem
+                       .Select(r => new StatisticsItem
                                     {
                                         Name = r.GetFullPath(),
                                         Path = r.GetFullPath(),

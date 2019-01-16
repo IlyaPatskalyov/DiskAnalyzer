@@ -35,11 +35,36 @@
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
     <ItemGroup>
+        <Reference Include="Autofac, Version=4.0.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da">
+            <HintPath>..\packages\Autofac.4.0.0\lib\net451\Autofac.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
+        <Reference Include="AutofacSerilogIntegration, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d672c67444a98ac9">
+            <HintPath>..\packages\AutofacSerilogIntegration.2.0.1-dev-00031\lib\net45\AutofacSerilogIntegration.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
         <Reference Include="ICSharpCode.TreeView, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
             <HintPath>..\Assemblies\ICSharpCode.TreeView.dll</HintPath>
         </Reference>
         <Reference Include="JetBrains.Annotations, Version=2018.2.1.0, Culture=neutral, PublicKeyToken=1010a0d8d6380325">
             <HintPath>..\packages\JetBrains.Annotations.2018.2.1\lib\net20\JetBrains.Annotations.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
+        <Reference Include="Microsoft.CSharp"/>
+        <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10">
+            <HintPath>..\packages\Serilog.2.7.1\lib\net46\Serilog.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
+        <Reference Include="Serilog.Enrichers.Thread, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10">
+            <HintPath>..\packages\Serilog.Enrichers.Thread.3.0.1-dev-00728\lib\net45\Serilog.Enrichers.Thread.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
+        <Reference Include="Serilog.Sinks.Debug, Version=1.0.1.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10">
+            <HintPath>..\packages\Serilog.Sinks.Debug.1.0.1\lib\net46\Serilog.Sinks.Debug.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
+        <Reference Include="Serilog.Sinks.EventLog, Version=3.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10">
+            <HintPath>..\packages\Serilog.Sinks.EventLog.3.1.0\lib\net45\Serilog.Sinks.EventLog.dll</HintPath>
             <Private>True</Private>
         </Reference>
         <Reference Include="System"/>
@@ -64,18 +89,26 @@
             <DependentUpon>App.xaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
+        <Compile Include="Configuration\ContainerFactory.cs"/>
+        <Compile Include="Configuration\LoggingFactory.cs"/>
         <Compile Include="Core\IconHelpers.cs"/>
         <Compile Include="Core\IoHelpers.cs"/>
         <Compile Include="Core\NumberExtensions.cs"/>
+        <Compile Include="Model\IFileSystemNode.cs"/>
         <Compile Include="Model\TreeGridFileNode.cs"/>
-        <Compile Include="Model\FileSystemModel.cs"/>
         <Compile Include="Model\FileSystemNode.cs"/>
         <Compile Include="Model\FileType.cs"/>
-        <Compile Include="Model\TopItemModel.cs"/>
+        <Compile Include="Model\StatisticsItem.cs"/>
         <Compile Include="MainWindow.xaml.cs">
             <DependentUpon>MainWindow.xaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
+        <Compile Include="Services\DriveService.cs"/>
+        <Compile Include="Services\FileSystemService.cs"/>
+        <Compile Include="Services\IDriveService.cs"/>
+        <Compile Include="Services\IFileSystemService.cs"/>
+        <Compile Include="Services\IStatisticsService.cs"/>
+        <Compile Include="Services\StatisticsService.cs"/>
         <Compile Include="Statistics\IStatisticsCalculator.cs"/>
         <Compile Include="Statistics\TopDirectoriesByFilesCountCalculator.cs"/>
         <Compile Include="Statistics\TopDirectoriesBySizeCalculator.cs"/>

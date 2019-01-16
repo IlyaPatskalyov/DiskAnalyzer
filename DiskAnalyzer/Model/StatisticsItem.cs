@@ -3,7 +3,7 @@ using DiskAnalyzer.Core;
 
 namespace DiskAnalyzer.Model
 {
-    public class TopItem
+    public class StatisticsItem
     {
         public string Name { get; set; }
 

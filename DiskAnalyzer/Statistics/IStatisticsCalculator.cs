@@ -5,6 +5,6 @@ namespace DiskAnalyzer.Statistics
 {
     public interface IStatisticsCalculator
     {
-        IEnumerable<TopItem> Calculate(FileSystemNode node);
+        IEnumerable<StatisticsItem> Calculate(IFileSystemNode node);
     }
 }

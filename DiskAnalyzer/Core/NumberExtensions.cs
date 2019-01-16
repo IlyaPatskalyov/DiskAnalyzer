@@ -4,7 +4,7 @@ namespace DiskAnalyzer.Core
 {
     public static class NumberExtensions
     {
-        private static NumberFormatInfo numberFormatInfo;
+        private static readonly NumberFormatInfo numberFormatInfo;
 
         static NumberExtensions()
         {

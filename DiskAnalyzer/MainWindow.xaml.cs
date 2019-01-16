@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,188 +7,131 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using DiskAnalyzer.Core;
 using DiskAnalyzer.Model;
-using DiskAnalyzer.Statistics;
+using DiskAnalyzer.Services;
 using ICSharpCode.TreeView;
 
 namespace DiskAnalyzer
 {
     public partial class MainWindow
     {
-        private DriveInfo currentDriveInfo;
-        private FileSystemModel model;
+        private readonly IFileSystemService fileSystemService;
+        private readonly IStatisticsService statisticsService;
+
+        private string currentDrive;
+        private volatile bool inProcess;
         private CancellationTokenSource statisticsCancellationTokenSource;
         private CancellationTokenSource treeCancellationTokenSource;
 
-
-        public MainWindow()
+        public MainWindow(IDriveService driveService,
+                          IFileSystemService fileSystemService,
+                          IStatisticsService statisticsService)
         {
             InitializeComponent();
-            Progress.IsIndeterminate = true;
+            this.fileSystemService = fileSystemService;
+            this.statisticsService = statisticsService;
 
             DataContext = this;
             DriveInfos = new ObservableCollection<DriveInfo>();
-            TopFilesBySize = new ObservableCollection<TopItem>();
-            TopDirectoriesBySize = new ObservableCollection<TopItem>();
-            TopDirectoriesByFilesCount = new ObservableCollection<TopItem>();
-            TopExtensions = new ObservableCollection<TopItem>();
-            TopMimeTypes = new ObservableCollection<TopItem>();
-            TopFilesByCreationYear = new ObservableCollection<TopItem>();
-
-            Drives.ItemsSource = DriveInfos;
-            UpdateDrives();
-            TreeGrid.ShowRoot = true;
-
-            var synchronizationContext = SynchronizationContext.Current;
-            var timer = new System.Timers.Timer();
-            timer.Elapsed += (v, e) => synchronizationContext.Send(a => UpdateDrives(), v);
-            timer.Interval = 5000;
-            timer.Enabled = true;
+            driveService.StartWatcher(SynchronizationContext.Current, DriveInfos);
         }
-
 
         public ObservableCollection<DriveInfo> DriveInfos { get; }
-        public ObservableCollection<TopItem> TopFilesBySize { get; }
-        public ObservableCollection<TopItem> TopDirectoriesBySize { get; }
-        public ObservableCollection<TopItem> TopDirectoriesByFilesCount { get; }
-        public ObservableCollection<TopItem> TopExtensions { get; }
-        public ObservableCollection<TopItem> TopMimeTypes { get; }
-        public ObservableCollection<TopItem> TopFilesByCreationYear { get; }
+        public ObservableCollection<StatisticsItem> TopFilesBySize => statisticsService.GetCollection(nameof(TopFilesBySize));
+        public ObservableCollection<StatisticsItem> TopDirectoriesBySize => statisticsService.GetCollection(nameof(TopDirectoriesBySize));
+        public ObservableCollection<StatisticsItem> TopDirectoriesByFilesCount => statisticsService.GetCollection(nameof(TopDirectoriesByFilesCount));
+        public ObservableCollection<StatisticsItem> TopExtensions => statisticsService.GetCollection(nameof(TopExtensions));
+        public ObservableCollection<StatisticsItem> TopMimeTypes => statisticsService.GetCollection(nameof(TopMimeTypes));
+        public ObservableCollection<StatisticsItem> TopFilesByCreationYear => statisticsService.GetCollection(nameof(TopFilesByCreationYear));
 
-        private void UpdateDrives()
+
+        private void Init(string drive)
         {
-            var newValues = DriveInfo.GetDrives().Where(d => d.IsReady).ToArray();
+            var driveNode = fileSystemService.GetDrive(drive);
+            fileSystemService.StartWatcher(drive);
 
-            var newDriveInfos = newValues.Select((drive, index) => new {Drive = drive.Name, Index = index}).ToDictionary(k => k.Drive, v => v.Index);
-            var oldDriveInfos = DriveInfos.Select((drive, index) => new {Drive = drive.Name, Index = index}).ToDictionary(k => k.Drive, v => v.Index);
+            TreeGrid.Root = new TreeGridFileNode(driveNode);
 
-            foreach (var name in oldDriveInfos.Keys.Except(newDriveInfos.Keys))
-            {
-                DriveInfos.RemoveAt(oldDriveInfos[name]);
-            }
+            SetStatus($"Scanning drive: {drive} ...", loader: true);
 
-            foreach (var name in newDriveInfos.Keys.Except(oldDriveInfos.Keys))
-            {
-                var index = newDriveInfos[name];
-                DriveInfos.Insert(index, newValues[index]);
-            }
+            var ts = new CancellationTokenSource();
+
+            Task.Run(() =>
+                     {
+                         inProcess = true;
+                         fileSystemService.Scan(drive, ts.Token);
+                         inProcess = false;
+                     })
+                .ContinueWith(t =>
+                              {
+                                  SetStatus("Ready", loader: false);
+
+                                  TreeGrid.Root = new TreeGridFileNode(driveNode);
+                                  CalcStatistics(driveNode);
+                              }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+
+
+            treeCancellationTokenSource = ts;
         }
 
-        private void Init()
+        private void Reset()
         {
-            var driveInfo = Drives.SelectedItem as DriveInfo;
-            if (driveInfo == null) return;
-
-            if (currentDriveInfo == driveInfo) return;
-
             TreeGrid.ItemsSource = null;
-            CleanupStatistics();
+            statisticsService.Cleanup();
 
             treeCancellationTokenSource?.Cancel();
             statisticsCancellationTokenSource?.Cancel();
 
-            model?.StopWatcher();
-
-            model = new FileSystemModel(driveInfo.Name, SynchronizationContext.Current);
-            model.StartWatcher();
-
-            TreeGrid.Root = new TreeGridFileNode(model);
-
-            Progress.Visibility = Visibility.Visible;
-            SetStatus($"Scanning drive: {model.Root.GetFullPath()} ...");
-
-            var ts = new CancellationTokenSource();
-
-            Task.Run(() => model.Refresh(ts.Token))
-                .ContinueWith(t =>
-                              {
-                                  Progress.Visibility = Visibility.Collapsed;
-                                  SetStatus("Ready");
-
-                                  TreeGrid.Root = new TreeGridFileNode(model);
-                                  CalcTop(model.Root);
-                              }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
-
-            currentDriveInfo = driveInfo;
-            treeCancellationTokenSource = ts;
-        }
-
-        private void CleanupStatistics()
-        {
-            TopFilesBySize.Clear();
-            TopDirectoriesBySize.Clear();
-            TopDirectoriesByFilesCount.Clear();
-            TopExtensions.Clear();
-            TopMimeTypes.Clear();
-            TopFilesByCreationYear.Clear();
+            if (currentDrive != null)
+                fileSystemService.StopWatcher(currentDrive);
+            currentDrive = null;
         }
 
 
-        private void CalcTop(FileSystemNode root)
+        private void CalcStatistics(IFileSystemNode node)
         {
-            if (root == null)
+            if (node == null)
                 return;
             statisticsCancellationTokenSource?.Cancel();
             var ts = new CancellationTokenSource();
 
-            Progress.Visibility = Visibility.Visible;
-            SetStatus($"Analyzing: {root.GetFullPath()} ...");
+            SetStatus($"Analyzing: {node.GetFullPath()} ...", loader: true);
 
-            Task.WhenAll(
-                    CalcStatisticsAsync(root, new TopFilesBySizeCalculator(), TopFilesBySize, ts),
-                    CalcStatisticsAsync(root, new TopDirectoriesBySizeCalculator(), TopDirectoriesBySize, ts),
-                    CalcStatisticsAsync(root, new TopDirectoriesByFilesCountCalculator(), TopDirectoriesByFilesCount, ts),
-                    CalcStatisticsAsync(root, new TopExtensionsCalculator(), TopExtensions, ts),
-                    CalcStatisticsAsync(root, new TopMimeTypesCalculator(), TopMimeTypes, ts),
-                    CalcStatisticsAsync(root, new TopFilesByCreationYearCalculator(), TopFilesByCreationYear, ts))
-                .ContinueWith(a =>
-                              {
-                                  Progress.Visibility = Visibility.Collapsed;
-                                  SetStatus("Ready");
-                              }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+            statisticsService.CalculateAsync(node, ts.Token, SynchronizationContext.Current)
+                             .ContinueWith(a => SetStatus("Ready", loader: false),
+                                           ts.Token, TaskContinuationOptions.None,
+                                           TaskScheduler.FromCurrentSynchronizationContext());
 
             statisticsCancellationTokenSource = ts;
         }
 
-        private Task CalcStatisticsAsync(FileSystemNode root, IStatisticsCalculator calculator, ObservableCollection<TopItem> observableCollection,
-                                         CancellationTokenSource ts)
+        private void SetStatus(string text, bool loader)
         {
-            observableCollection.Clear();
-            return Task.Run(() => calculator.Calculate(root).ToList(), ts.Token)
-                       .ContinueWith(async t => SetCollection(observableCollection, await t),
-                                     TaskScheduler.FromCurrentSynchronizationContext());
-        }
-
-        private void SetCollection<T>(ObservableCollection<T> observable, IEnumerable<T> result)
-        {
-            observable.Clear();
-            foreach (var r in result)
-            {
-                observable.Add(r);
-            }
-        }
-
-
-        internal void SetStatus(string text)
-        {
+            Progress.Visibility = loader ? Visibility.Visible : Visibility.Collapsed;
             Status.Text = text;
         }
 
         private void ChangeDrive(object sender, SelectionChangedEventArgs e)
         {
-            Init();
+            var driveInfo = Drives.SelectedItem as DriveInfo;
+            if (driveInfo == null) return;
+
+            if (currentDrive == driveInfo.Name) return;
+
+            Reset();
+            Init(driveInfo.Name);
         }
 
         private void TreeGridItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (model.InProcess) return;
+            if (inProcess) return;
 
             var treeViewItem = sender as SharpTreeViewItem;
             if (treeViewItem == null) return;
 
-            var fileNode = (treeViewItem.Content as TreeGridFileNode);
+            var fileNode = treeViewItem.Content as TreeGridFileNode;
             if (fileNode == null) return;
 
-            CalcTop(model.Root.Parent.GetChild(fileNode.FullPath));
+            CalcStatistics(fileSystemService.Root.GetChild(fileNode.FullPath));
         }
 
         private void ListViewItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -198,7 +139,7 @@ namespace DiskAnalyzer
             var listViewItem = sender as ListViewItem;
             if (listViewItem == null) return;
 
-            var topItem = listViewItem.Content as TopItem;
+            var topItem = listViewItem.Content as StatisticsItem;
             if (topItem == null) return;
 
             var fileNode = ((TreeGridFileNode) TreeGrid.Root).GetChild(IoHelpers.SplitPath(topItem.Path)[1]);

@@ -6,7 +6,7 @@ namespace DiskAnalyzer.Statistics
 {
     public class TopDirectoriesBySizeCalculator : IStatisticsCalculator
     {
-        public IEnumerable<TopItem> Calculate(FileSystemNode node)
+        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)
         {
             return node.Search()
                        .Where(r => r.FileType == FileType.Directory &&
@@ -15,7 +15,7 @@ namespace DiskAnalyzer.Statistics
                                                    .Select(z => z.Size)
                                                    .DefaultIfEmpty().Max())
                        .OrderByDescending(a => a.Size)
-                       .Select(r => new TopItem
+                       .Select(r => new StatisticsItem
                                     {
                                         Name = r.GetFullPath(),
                                         Path = r.GetFullPath(),

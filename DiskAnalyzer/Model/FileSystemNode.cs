@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -9,33 +8,22 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using DiskAnalyzer.Core;
 using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Model
 {
-    public class FileSystemNode : IEnumerable<FileSystemNode>, INotifyCollectionChanged, INotifyPropertyChanged
+    public class FileSystemNode : IFileSystemNode
     {
-        private readonly FileSystemModel model;
-        private readonly SynchronizationContext synchronizationContext;
-
         private ConcurrentDictionary<string, FileSystemNode> children;
         private volatile int countDirectories;
         private volatile int countFiles;
         private DateTime? creationTime;
         private volatile FileType fileType;
 
-        private long lastChangeTimeTicks;
         private string name;
         private FileSystemNode parent;
         private long size;
-
-        public FileSystemNode(SynchronizationContext synchronizationContext, FileSystemModel model)
-        {
-            this.synchronizationContext = synchronizationContext;
-            this.model = model;
-        }
 
         [CanBeNull] public string Name => name;
 
@@ -46,33 +34,24 @@ namespace DiskAnalyzer.Model
 
         public int CountDirectories => countDirectories;
 
-        public FileSystemNode Parent => parent;
+        public IFileSystemNode Parent => parent;
 
         public FileType FileType => fileType;
 
         [NotNull]
-        public IEnumerable<FileSystemNode> Children => children?.Values
-                                                               .Where(n => n.FileType == FileType.Directory)
-                                                               .Concat(children.Values.Where(n => n.FileType == FileType.File))
-                                                       ?? Enumerable.Empty<FileSystemNode>();
+        public IEnumerable<IFileSystemNode> Children => children?.Values
+                                                                .Where(n => n.FileType == FileType.Directory)
+                                                                .Concat(children.Values.Where(n => n.FileType == FileType.File))
+                                                        ?? Enumerable.Empty<FileSystemNode>();
 
-        public IEnumerator<FileSystemNode> GetEnumerator()
-        {
-            return Children.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public IEnumerable<FileSystemNode> Search()
+        public IEnumerable<IFileSystemNode> Search()
         {
-            var queue = new Queue<FileSystemNode>();
+            var queue = new Queue<IFileSystemNode>();
             queue.Enqueue(this);
             while (queue.Count > 0)
             {
@@ -157,7 +136,7 @@ namespace DiskAnalyzer.Model
         }
 
         [CanBeNull]
-        public FileSystemNode GetChild([NotNull] string path)
+        public FileSystemNode GetChild(string path)
         {
             var parts = IoHelpers.SplitPath(path);
             if (children != null && children.TryGetValue(parts[0], out var child))
@@ -175,7 +154,7 @@ namespace DiskAnalyzer.Model
         {
             var parts = IoHelpers.SplitPath(path);
             children = children ?? new ConcurrentDictionary<string, FileSystemNode>();
-            var child = children.GetOrAdd(parts[0], v => new FileSystemNode(synchronizationContext, model)
+            var child = children.GetOrAdd(parts[0], v => new FileSystemNode()
                                                          {
                                                              name = v,
                                                              parent = this
@@ -246,34 +225,13 @@ namespace DiskAnalyzer.Model
         [NotifyPropertyChangedInvocator]
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            if (PropertyChanged == null)
-                return;
-
-            var now = DateTime.UtcNow.Ticks;
-            if (model.InProcess && (now - lastChangeTimeTicks) < 50 * 10000)
-                return;
-
-            lastChangeTimeTicks = now;
-
-
-            var args = new PropertyChangedEventArgs(propertyName);
-            if (SynchronizationContext.Current == synchronizationContext)
-                PropertyChanged.Invoke(this, args);
-            else
-                Task.Run(() => synchronizationContext.Send(a => PropertyChanged.Invoke(this, (PropertyChangedEventArgs) a), args));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
 
         protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, FileSystemNode node = null)
         {
-            if (CollectionChanged == null)
-                return;
-
-            var args = new NotifyCollectionChangedEventArgs(action, node);
-            if (SynchronizationContext.Current == synchronizationContext)
-                CollectionChanged.Invoke(this, args);
-            else
-                Task.Run(() => synchronizationContext.Send(a => CollectionChanged.Invoke(this, (NotifyCollectionChangedEventArgs) a), args));
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(action, node));
         }
     }
 }

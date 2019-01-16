@@ -7,13 +7,13 @@ namespace DiskAnalyzer.Statistics
 {
     public class TopExtensionsCalculator : IStatisticsCalculator
     {
-        public IEnumerable<TopItem> Calculate(FileSystemNode node)
+        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)
         {
             return node.Search()
                        .Where(r => r.FileType == FileType.File)
                        .OrderByDescending(a => a.Size)
                        .GroupBy(r => Path.GetExtension(r.Name)?.ToLower())
-                       .Select(r => new TopItem()
+                       .Select(r => new StatisticsItem()
                                     {
                                         Name = string.IsNullOrEmpty(r.Key) ? "*" : r.Key,
                                         Path = r.First().GetFullPath(),
