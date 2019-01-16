@@ -4,9 +4,15 @@
         xmlns:sd="http://icsharpcode.net/sharpdevelop/treeview"
         xmlns:model="clr-namespace:DiskAnalyzer.Model"
         xmlns:io="clr-namespace:System.IO;assembly=mscorlib"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:diskAnalyzer="clr-namespace:DiskAnalyzer"
+        mc:Ignorable="d"
         Title="Disk Analyzer"
         SnapsToDevicePixels="True"
-        Background="{x:Static SystemColors.ControlBrush}">
+        Background="{x:Static SystemColors.ControlBrush}"
+        d:DataContext="{d:DesignInstance diskAnalyzer:MainWindow}"
+        Closed="MainWindow_OnClosed">
 
     <Window.Resources>
         <DataTemplate x:Key="DriveDataTemplate" DataType="io:DriveInfo">

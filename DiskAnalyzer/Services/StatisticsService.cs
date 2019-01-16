@@ -5,9 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using DiskAnalyzer.Model;
 using DiskAnalyzer.Statistics;
+using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Services
 {
+    [UsedImplicitly]
     public class StatisticsService : IStatisticsService
     {
         private readonly Dictionary<string, Basket> baskets;

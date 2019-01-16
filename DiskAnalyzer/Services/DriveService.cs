@@ -5,11 +5,13 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using JetBrains.Annotations;
 using Serilog;
 using Timer = System.Timers.Timer;
 
 namespace DiskAnalyzer.Services
 {
+    [UsedImplicitly]
     public class DriveService : IDriveService, IDisposable
     {
         private readonly ILogger logger;

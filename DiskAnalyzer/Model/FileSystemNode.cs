@@ -13,7 +13,7 @@ using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Model
 {
-    public class FileSystemNode : IFileSystemNode
+    public sealed class FileSystemNode : IFileSystemNode
     {
         private ConcurrentDictionary<string, FileSystemNode> children;
         private volatile int countDirectories;
@@ -223,13 +223,13 @@ namespace DiskAnalyzer.Model
         }
 
         [NotifyPropertyChangedInvocator]
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
 
-        protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, FileSystemNode node = null)
+        private void OnCollectionChanged(NotifyCollectionChangedAction action, FileSystemNode node = null)
         {
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(action, node));
         }

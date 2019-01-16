@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using DiskAnalyzer.Model;
+using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Statistics
 {
+    [UsedImplicitly]
     public class TopMimeTypesCalculator : IStatisticsCalculator
     {
         public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)

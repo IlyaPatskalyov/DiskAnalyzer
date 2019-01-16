@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DiskAnalyzer.Model;
+using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Statistics
 {
+    [UsedImplicitly]
     public class TopExtensionsCalculator : IStatisticsCalculator
     {
         public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)

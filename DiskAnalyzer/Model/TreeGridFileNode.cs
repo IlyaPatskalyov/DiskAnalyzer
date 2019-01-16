@@ -40,7 +40,6 @@ namespace DiskAnalyzer.Model
             LazyLoading = node.FileType != FileType.File;
         }
 
-
         public string Name => node.Name;
 
         public override object Text => node.Name;

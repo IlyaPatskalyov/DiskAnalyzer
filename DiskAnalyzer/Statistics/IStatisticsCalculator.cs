@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using DiskAnalyzer.Model;
+using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Statistics
 {
     public interface IStatisticsCalculator
     {
-        IEnumerable<StatisticsItem> Calculate(IFileSystemNode node);
+        [NotNull]
+        IEnumerable<StatisticsItem> Calculate([NotNull] IFileSystemNode node);
     }
 }

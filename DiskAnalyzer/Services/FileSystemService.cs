@@ -10,6 +10,7 @@ using Serilog;
 
 namespace DiskAnalyzer.Services
 {
+    [UsedImplicitly]
     public class FileSystemService : IDisposable, IFileSystemService
     {
         private readonly ILogger logger;

@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace DiskAnalyzer
 {
     public partial class MainWindow
     {
+        private readonly IDriveService driveService;
         private readonly IFileSystemService fileSystemService;
         private readonly IStatisticsService statisticsService;
 
@@ -27,6 +29,7 @@ namespace DiskAnalyzer
                           IStatisticsService statisticsService)
         {
             InitializeComponent();
+            this.driveService = driveService;
             this.fileSystemService = fileSystemService;
             this.statisticsService = statisticsService;
 
@@ -43,7 +46,6 @@ namespace DiskAnalyzer
         public ObservableCollection<StatisticsItem> TopMimeTypes => statisticsService.GetCollection(nameof(TopMimeTypes));
         public ObservableCollection<StatisticsItem> TopFilesByCreationYear => statisticsService.GetCollection(nameof(TopFilesByCreationYear));
 
-
         private void Init(string drive)
         {
             var driveNode = fileSystemService.GetDrive(drive);
@@ -57,9 +59,15 @@ namespace DiskAnalyzer
 
             Task.Run(() =>
                      {
-                         inProcess = true;
-                         fileSystemService.Scan(drive, ts.Token);
-                         inProcess = false;
+                         try
+                         {
+                             inProcess = true;
+                             fileSystemService.Scan(drive, ts.Token);
+                         }
+                         finally
+                         {
+                             inProcess = false;
+                         }
                      })
                 .ContinueWith(t =>
                               {
@@ -119,6 +127,8 @@ namespace DiskAnalyzer
 
             Reset();
             Init(driveInfo.Name);
+
+            currentDrive = driveInfo.Name;
         }
 
         private void TreeGridItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -157,6 +167,12 @@ namespace DiskAnalyzer
             item.IsSelected = true;
             Keyboard.Focus(item);
             TreeGrid.ScrollIntoView(item);
+        }
+
+        private void MainWindow_OnClosed(object sender, EventArgs e)
+        {
+            Reset();
+            driveService.StopWatcher(DriveInfos);
         }
     }
 }
