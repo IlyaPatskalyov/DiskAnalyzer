@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Threading;
+using JetBrains.Annotations;
 
 namespace DiskAnalyzer.Model
 {
@@ -16,7 +18,10 @@ namespace DiskAnalyzer.Model
         FileType FileType { get; }
         IEnumerable<IFileSystemNode> Children { get; }
 
-        IEnumerable<IFileSystemNode> Search();
+        [CanBeNull]
+        IFileSystemNode GetChild(string path);
+
+        IEnumerable<IFileSystemNode> Search(CancellationToken token);
         string GetFullPath();
     }
 }

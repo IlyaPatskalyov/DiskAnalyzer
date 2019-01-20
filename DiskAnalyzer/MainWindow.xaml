@@ -7,6 +7,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:diskAnalyzer="clr-namespace:DiskAnalyzer"
+        xmlns:vm="clr-namespace:DiskAnalyzer.ViewModel"
         mc:Ignorable="d"
         Title="Disk Analyzer"
         SnapsToDevicePixels="True"
@@ -76,7 +77,7 @@
                             <GridViewColumn Header="File Size"
                                             Width="{Binding ElementName=TreeSizeHelperField, Path=ActualWidth}">
                                 <GridViewColumn.CellTemplate>
-                                    <DataTemplate DataType="model:TreeGridFileNode">
+                                    <DataTemplate DataType="vm:TreeGridNodeViewModel">
                                         <TextBlock Text="{Binding Size}" TextAlignment="Right" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -84,7 +85,7 @@
                             <GridViewColumn Header="Count Files"
                                             Width="{Binding ElementName=TreeCountFilesHelperField, Path=ActualWidth}">
                                 <GridViewColumn.CellTemplate>
-                                    <DataTemplate DataType="model:TreeGridFileNode">
+                                    <DataTemplate DataType="vm:TreeGridNodeViewModel">
                                         <TextBlock Text="{Binding CountFiles}" TextAlignment="Right" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -92,7 +93,7 @@
                             <GridViewColumn Header="Count Directories"
                                             Width="{Binding ElementName=TreeCountDirectoriesHelperField, Path=ActualWidth}">
                                 <GridViewColumn.CellTemplate>
-                                    <DataTemplate DataType="model:TreeGridFileNode">
+                                    <DataTemplate DataType="vm:TreeGridNodeViewModel">
                                         <TextBlock Text="{Binding CountDirectories}" TextAlignment="Right" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -100,16 +101,17 @@
                             <GridViewColumn Header="Percentage"
                                             Width="{Binding ElementName=TreePercentageHelperField, Path=ActualWidth}">
                                 <GridViewColumn.CellTemplate>
-                                    <DataTemplate DataType="model:TreeGridFileNode">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Rectangle Fill="{Binding Color}" Stroke="LightGray"
-                                                       Margin="{Binding MarginPercentage}"
-                                                       HorizontalAlignment="Right" Width="{Binding FilledPercentWidth}"
-                                                       Height="16" />
+                                    <DataTemplate DataType="vm:TreeGridNodeViewModel">
+                                        <Grid>
                                             <Rectangle Fill="LightGray" Stroke="LightGray"
-                                                       HorizontalAlignment="Right" Width="{Binding FreePercentWidth}"
-                                                       Height="16" />
-                                        </StackPanel>
+                                                       HorizontalAlignment="Left" Width="{Binding PercentWidth}"
+                                                       Margin="{Binding MarginPercentage}"
+                                                       Height="16" Grid.Column="0" />
+                                            <Rectangle Fill="{Binding Color}" Stroke="LightGray"
+                                                       HorizontalAlignment="Left" Width="{Binding FilledPercentWidth}"
+                                                       Margin="{Binding MarginPercentage}"
+                                                       Height="16" Grid.Column="0" />
+                                        </Grid>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

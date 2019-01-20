@@ -10,11 +10,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using DiskAnalyzer.Core;
+using DiskAnalyzer.Model;
 using ICSharpCode.TreeView;
 
-namespace DiskAnalyzer.Model
+namespace DiskAnalyzer.ViewModel
 {
-    public class TreeGridFileNode : SharpTreeNode
+    public class TreeGridNodeViewModel : SharpTreeNode
     {
         private static readonly Color[] colors = typeof(Colors).GetProperties()
                                                                .Where(p => p.Name.StartsWith("Dark"))
@@ -28,17 +29,17 @@ namespace DiskAnalyzer.Model
         private readonly IFileSystemNode node;
         private readonly SynchronizationContext synchronizationContext;
 
-        public TreeGridFileNode(IFileSystemNode node, int level = 0)
+        public TreeGridNodeViewModel(IFileSystemNode node, int level = 0)
         {
             this.node = node;
             this.level = level;
-
+            node.CollectionChanged += CollectionChangedCallback;
+            node.PropertyChanged += NotifyAboutChangedProperties;
             synchronizationContext = SynchronizationContext.Current;
-            this.node.PropertyChanged += NotifyAboutChangedProperties;
-            this.node.CollectionChanged += CollectionChangedCallback;
             fullPath = this.node.GetFullPath();
             LazyLoading = node.FileType != FileType.File;
         }
+
 
         public string Name => node.Name;
 
@@ -53,12 +54,11 @@ namespace DiskAnalyzer.Model
         public string CountDirectories => (node.CountDirectories > 0 ? node.CountDirectories : (int?) null)?.FormatNumber();
 
         public Thickness MarginPercentage => new Thickness((1 - Math.Pow(0.9, level)) * 100, 0, 0, 0);
-
+        public double PercentWidth => 100 * Math.Pow(0.9, level);
+        
         public double Percent => (double) node.Size / (node.Parent.Parent != null ? node.Parent.Size : node.Size) * 100;
 
         public double FilledPercentWidth => Percent * Math.Pow(0.9, level);
-
-        public double FreePercentWidth => (100 - Percent) * Math.Pow(0.9, level);
 
         public string FullPath => fullPath;
 
@@ -81,15 +81,15 @@ namespace DiskAnalyzer.Model
         {
             Children.Clear();
             foreach (var p in node.Children.OrderByDescending(r => r.FileType).ThenBy(r => r.Name))
-                Children.Add(new TreeGridFileNode(p, level + 1));
+                Children.Add(new TreeGridNodeViewModel(p, level + 1));
         }
 
-        public TreeGridFileNode GetChild(string path)
+        public TreeGridNodeViewModel GetChild(string path)
         {
             IsExpanded = true;
 
             var parts = IoHelpers.SplitPath(path);
-            var child = Children?.Cast<TreeGridFileNode>().FirstOrDefault(n => n.Name == parts[0]);
+            var child = Children?.Cast<TreeGridNodeViewModel>().FirstOrDefault(n => n.Name == parts[0]);
             if (child != null)
             {
                 if (parts.Length == 1)
@@ -113,19 +113,39 @@ namespace DiskAnalyzer.Model
             menu.IsOpen = true;
         }
 
+        private void NotifyAboutParentChangedProperties(object sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(IFileSystemNode.Size))
+            {
+                RaisePropertyChanged(nameof(FilledPercentWidth));
+            }
+        }
+
         private void NotifyAboutChangedProperties(object sender, PropertyChangedEventArgs args)
         {
-            if (args.PropertyName == nameof(FileSystemNode.Size))
+            if (args.PropertyName == nameof(IFileSystemNode.Size))
             {
                 RaisePropertyChanged(nameof(Size));
                 RaisePropertyChanged(nameof(FilledPercentWidth));
-                RaisePropertyChanged(nameof(FreePercentWidth));
             }
 
-            if (args.PropertyName == nameof(FileSystemNode.CountFiles))
+            if (args.PropertyName == nameof(IFileSystemNode.CountFiles))
                 RaisePropertyChanged(nameof(CountFiles));
-            if (args.PropertyName == nameof(FileSystemNode.CountDirectories))
+            if (args.PropertyName == nameof(IFileSystemNode.CountDirectories))
                 RaisePropertyChanged(nameof(CountDirectories));
+        }
+
+        protected override void OnIsVisibleChanged()
+        {
+            base.OnIsVisibleChanged();
+            if (IsVisible)
+            {
+                node.Parent.PropertyChanged += NotifyAboutParentChangedProperties;
+            }
+            else
+            {
+                node.Parent.PropertyChanged -= NotifyAboutParentChangedProperties;
+            }
         }
     }
 }

@@ -14,6 +14,7 @@ namespace DiskAnalyzer
     public partial class App : Application
     {
         private static readonly ILogger logger = LoggingFactory.Build();
+        private IContainer container;
 
         public App()
         {
@@ -25,8 +26,14 @@ namespace DiskAnalyzer
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            var container = ContainerFactory.Build(logger);
+            container = ContainerFactory.Build(logger);
             container.Resolve<MainWindow>().Show();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            base.OnExit(e);
+            container.Dispose();
         }
 
         private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs args)

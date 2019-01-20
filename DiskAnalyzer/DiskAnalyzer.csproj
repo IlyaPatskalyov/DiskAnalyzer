@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -50,7 +50,7 @@
             <HintPath>..\packages\JetBrains.Annotations.2018.2.1\lib\net20\JetBrains.Annotations.dll</HintPath>
             <Private>True</Private>
         </Reference>
-        <Reference Include="Microsoft.CSharp"/>
+        <Reference Include="Microsoft.CSharp" />
         <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10">
             <HintPath>..\packages\Serilog.2.7.1\lib\net46\Serilog.dll</HintPath>
             <Private>True</Private>
@@ -71,56 +71,56 @@
             <HintPath>..\packages\SharpShell.2.7.1\lib\net40-client\SharpShell.dll</HintPath>
             <Private>True</Private>
         </Reference>
-        <Reference Include="System"/>
-        <Reference Include="System.Core"/>
-        <Reference Include="System.Data"/>
+        <Reference Include="System" />
+        <Reference Include="System.Core" />
+        <Reference Include="System.Data" />
         <Reference Include="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
             <HintPath>C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Drawing\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Drawing.dll</HintPath>
         </Reference>
         <Reference Include="System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
             <HintPath>C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Web.dll</HintPath>
         </Reference>
-        <Reference Include="System.Windows.Forms"/>
-        <Reference Include="System.Xml"/>
+        <Reference Include="System.Windows.Forms" />
+        <Reference Include="System.Xml" />
         <Reference Include="System.Xaml">
             <RequiredTargetFramework>4.0</RequiredTargetFramework>
         </Reference>
-        <Reference Include="WindowsBase"/>
-        <Reference Include="PresentationCore"/>
-        <Reference Include="PresentationFramework"/>
+        <Reference Include="WindowsBase" />
+        <Reference Include="PresentationCore" />
+        <Reference Include="PresentationFramework" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="App.xaml.cs">
             <DependentUpon>App.xaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
-        <Compile Include="Configuration\ContainerFactory.cs"/>
-        <Compile Include="Configuration\LoggingFactory.cs"/>
-        <Compile Include="Core\IconHelpers.cs"/>
-        <Compile Include="Core\IoHelpers.cs"/>
-        <Compile Include="Core\NumberExtensions.cs"/>
-        <Compile Include="Model\IFileSystemNode.cs"/>
-        <Compile Include="Model\TreeGridFileNode.cs"/>
-        <Compile Include="Model\FileSystemNode.cs"/>
-        <Compile Include="Model\FileType.cs"/>
-        <Compile Include="Model\StatisticsItem.cs"/>
+        <Compile Include="Configuration\ContainerFactory.cs" />
+        <Compile Include="Configuration\LoggingFactory.cs" />
+        <Compile Include="Core\IconHelpers.cs" />
+        <Compile Include="Core\IoHelpers.cs" />
+        <Compile Include="Core\NumberExtensions.cs" />
+        <Compile Include="Model\IFileSystemNode.cs" />
+        <Compile Include="Model\FileSystemNode.cs" />
+        <Compile Include="Model\FileType.cs" />
+        <Compile Include="Model\StatisticsItemModel.cs" />
         <Compile Include="MainWindow.xaml.cs">
             <DependentUpon>MainWindow.xaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
-        <Compile Include="Services\DriveService.cs"/>
-        <Compile Include="Services\FileSystemService.cs"/>
-        <Compile Include="Services\IDriveService.cs"/>
-        <Compile Include="Services\IFileSystemService.cs"/>
-        <Compile Include="Services\IStatisticsService.cs"/>
-        <Compile Include="Services\StatisticsService.cs"/>
-        <Compile Include="Statistics\IStatisticsCalculator.cs"/>
-        <Compile Include="Statistics\TopDirectoriesByFilesCountCalculator.cs"/>
-        <Compile Include="Statistics\TopDirectoriesBySizeCalculator.cs"/>
-        <Compile Include="Statistics\TopExtensionsCalculator.cs"/>
-        <Compile Include="Statistics\TopFilesByCreationYearCalculator.cs"/>
-        <Compile Include="Statistics\TopFilesBySizeCalculator.cs"/>
-        <Compile Include="Statistics\TopMimeTypesCalculator.cs"/>
+        <Compile Include="Services\DriveService.cs" />
+        <Compile Include="Services\FileSystemService.cs" />
+        <Compile Include="Services\IDriveService.cs" />
+        <Compile Include="Services\IFileSystemService.cs" />
+        <Compile Include="Services\IStatisticsService.cs" />
+        <Compile Include="Services\StatisticsService.cs" />
+        <Compile Include="Statistics\IStatisticsCalculator.cs" />
+        <Compile Include="Statistics\TopDirectoriesByFilesCountCalculator.cs" />
+        <Compile Include="Statistics\TopDirectoriesBySizeCalculator.cs" />
+        <Compile Include="Statistics\TopExtensionsCalculator.cs" />
+        <Compile Include="Statistics\TopFilesByCreationYearCalculator.cs" />
+        <Compile Include="Statistics\TopFilesBySizeCalculator.cs" />
+        <Compile Include="Statistics\TopMimeTypesCalculator.cs" />
+        <Compile Include="ViewModel\TreeGridNodeViewModel.cs" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Properties\AssemblyInfo.cs">
@@ -137,8 +137,8 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
-        <None Include="App.config"/>
-        <None Include="packages.config"/>
+        <None Include="App.config" />
+        <None Include="packages.config" />
     </ItemGroup>
     <ItemGroup>
         <ApplicationDefinition Include="App.xaml">
@@ -152,5 +152,5 @@
             <SubType>Designer</SubType>
         </Page>
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

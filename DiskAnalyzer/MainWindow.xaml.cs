@@ -9,6 +9,7 @@ using System.Windows.Input;
 using DiskAnalyzer.Core;
 using DiskAnalyzer.Model;
 using DiskAnalyzer.Services;
+using DiskAnalyzer.ViewModel;
 using ICSharpCode.TreeView;
 
 namespace DiskAnalyzer
@@ -48,32 +49,33 @@ namespace DiskAnalyzer
 
         private void Init(string drive)
         {
+            fileSystemService.Cleanup(drive);
+
             var driveNode = fileSystemService.GetDrive(drive);
             fileSystemService.StartWatcher(drive);
 
-            TreeGrid.Root = new TreeGridFileNode(driveNode);
-
+            TreeGrid.Root = new TreeGridNodeViewModel(driveNode);
             SetStatus($"Scanning drive: {drive} ...", loader: true);
 
-            var ts = new CancellationTokenSource();
-
-            Task.Run(() =>
-                     {
-                         try
-                         {
-                             inProcess = true;
-                             fileSystemService.Scan(drive, ts.Token);
-                         }
-                         finally
-                         {
-                             inProcess = false;
-                         }
-                     })
+            var ts = new CancellationTokenSource();            
+            Task.Delay(TimeSpan.FromMilliseconds(100), ts.Token)
+                .ContinueWith(t =>
+                              {
+                                  try
+                                  {
+                                      inProcess = true;
+                                      fileSystemService.Scan(drive, ts.Token);
+                                  }
+                                  finally
+                                  {
+                                      inProcess = false;
+                                  }
+                              }, ts.Token)
                 .ContinueWith(t =>
                               {
                                   SetStatus("Ready", loader: false);
 
-                                  TreeGrid.Root = new TreeGridFileNode(driveNode);
+                                  TreeGrid.Root = new TreeGridNodeViewModel(driveNode);
                                   CalcStatistics(driveNode);
                               }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
 
@@ -138,7 +140,7 @@ namespace DiskAnalyzer
             var treeViewItem = sender as SharpTreeViewItem;
             if (treeViewItem == null) return;
 
-            var fileNode = treeViewItem.Content as TreeGridFileNode;
+            var fileNode = treeViewItem.Content as TreeGridNodeViewModel;
             if (fileNode == null) return;
 
             CalcStatistics(fileSystemService.Root.GetChild(fileNode.FullPath));
@@ -152,7 +154,7 @@ namespace DiskAnalyzer
             var topItem = listViewItem.Content as StatisticsItem;
             if (topItem == null) return;
 
-            var fileNode = ((TreeGridFileNode) TreeGrid.Root).GetChild(IoHelpers.SplitPath(topItem.Path)[1]);
+            var fileNode = ((TreeGridNodeViewModel) TreeGrid.Root).GetChild(IoHelpers.SplitPath(topItem.Path)[1]);
 
             if (fileNode == null) return;
 

@@ -39,9 +39,7 @@ namespace DiskAnalyzer.Model
         public FileType FileType => fileType;
 
         [NotNull]
-        public IEnumerable<IFileSystemNode> Children => children?.Values
-                                                                .Where(n => n.FileType == FileType.Directory)
-                                                                .Concat(children.Values.Where(n => n.FileType == FileType.File))
+        public IEnumerable<IFileSystemNode> Children => children?.Values.Where(n => n.FileType != FileType.Unknown)
                                                         ?? Enumerable.Empty<FileSystemNode>();
 
 
@@ -49,17 +47,21 @@ namespace DiskAnalyzer.Model
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public IEnumerable<IFileSystemNode> Search()
+        public IEnumerable<IFileSystemNode> Search(CancellationToken token)
         {
             var queue = new Queue<IFileSystemNode>();
             queue.Enqueue(this);
             while (queue.Count > 0)
             {
+                token.ThrowIfCancellationRequested();
+
                 var r = queue.Dequeue();
                 yield return r;
 
                 foreach (var d in r.Children)
                 {
+                    token.ThrowIfCancellationRequested();
+
                     queue.Enqueue(d);
                 }
             }
@@ -127,16 +129,10 @@ namespace DiskAnalyzer.Model
         internal void CleanupNode()
         {
             children?.Clear();
-            UpdateCounters(-size, -countDirectories, -countFiles);
-            if (creationTime.HasValue)
-            {
-                creationTime = null;
-                OnPropertyChanged(nameof(CreationTime));
-            }
+            UpdateInfo(FileType.Unknown, 0, null);
         }
 
-        [CanBeNull]
-        public FileSystemNode GetChild(string path)
+        public IFileSystemNode GetChild(string path)
         {
             var parts = IoHelpers.SplitPath(path);
             if (children != null && children.TryGetValue(parts[0], out var child))

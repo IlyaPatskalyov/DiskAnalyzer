@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Web;
 using DiskAnalyzer.Model;
 using JetBrains.Annotations;
@@ -9,9 +10,9 @@ namespace DiskAnalyzer.Statistics
     [UsedImplicitly]
     public class TopMimeTypesCalculator : IStatisticsCalculator
     {
-        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)
+        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node, CancellationToken token)
         {
-            return node.Search()
+            return node.Search(token)
                        .Where(r => r.FileType == FileType.File)
                        .OrderByDescending(a => a.Size)
                        .GroupBy(r => MimeMapping.GetMimeMapping(r.Name))

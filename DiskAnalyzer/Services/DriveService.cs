@@ -33,16 +33,23 @@ namespace DiskAnalyzer.Services
 
         public void StartWatcher(SynchronizationContext synchronizationContext, ObservableCollection<DriveInfo> observable)
         {
-            var timer = timers.GetOrAdd(observable, k => new Timer() {Interval = 5000});
+            timers.GetOrAdd(observable, k => CreateTimer(synchronizationContext, observable)).Enabled = true;
+            synchronizationContext.Send(a => UpdateDrives(observable), null);
+        }
+
+        private Timer CreateTimer(SynchronizationContext synchronizationContext, ObservableCollection<DriveInfo> observable)
+        {
+            var timer = new Timer() {Interval = 5000};
             timer.Elapsed += (v, e) => synchronizationContext.Send(a => UpdateDrives(observable), v);
-            timer.Enabled = true;
-            UpdateDrives(observable);
+            return timer;
         }
 
         public void StopWatcher(ObservableCollection<DriveInfo> observable)
         {
-            if (timers.TryGetValue(observable, out var timer))
+            if (timers.TryRemove(observable, out var timer))
+            {
                 timer.Enabled = false;
+            }
         }
 
         private void UpdateDrives(ObservableCollection<DriveInfo> oldValues)
@@ -52,7 +59,7 @@ namespace DiskAnalyzer.Services
             var oldDriveInfos = IndexDrives(oldValues);
 
             var deletedDrives = oldDriveInfos.Keys.Except(newDriveInfos.Keys).ToArray();
-            foreach (var name in deletedDrives)
+            foreach (var name in deletedDrives.OrderByDescending(d => oldDriveInfos[d]))
             {
                 oldValues.RemoveAt(oldDriveInfos[name]);
             }

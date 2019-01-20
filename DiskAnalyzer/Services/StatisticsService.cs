@@ -46,7 +46,7 @@ namespace DiskAnalyzer.Services
                                         SynchronizationContext synchronizationContext)
         {
             basket.Observable.Clear();
-            return Task.Run(() => basket.Calculator.Calculate(root).ToList(), token)
+            return Task.Run(() => basket.Calculator.Calculate(root, token).ToList(), token)
                        .ContinueWith(
                            async t => synchronizationContext.Send(v => SetCollection(basket.Observable, (IEnumerable<StatisticsItem>) v), await t),
                            token);

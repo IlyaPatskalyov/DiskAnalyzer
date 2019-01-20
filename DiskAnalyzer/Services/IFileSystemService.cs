@@ -6,8 +6,9 @@ namespace DiskAnalyzer.Services
 {
     public interface IFileSystemService
     {
-        FileSystemNode Root { get; }
+        IFileSystemNode Root { get; }
         IFileSystemNode GetDrive([NotNull] string path);
+        void Cleanup(string path);
         void StopWatcher([NotNull] string path);
         void StartWatcher([NotNull] string path);
         void Scan([NotNull] string path, CancellationToken tsToken);

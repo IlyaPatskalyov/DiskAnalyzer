@@ -32,7 +32,7 @@ namespace DiskAnalyzer.Services
             }
         }
 
-        public FileSystemNode Root => rootNode;
+        public IFileSystemNode Root => rootNode;
 
         public IFileSystemNode GetDrive(string path)
         {
@@ -41,7 +41,11 @@ namespace DiskAnalyzer.Services
 
         public void StopWatcher(string path)
         {
-            watchers.GetOrAdd(path, CreateWatcher).EnableRaisingEvents = false;
+            if (watchers.TryRemove(path, out var watcher))
+            {
+                watcher.EnableRaisingEvents = false;
+                watcher.Dispose();
+            }
         }
 
         public void StartWatcher(string path)
@@ -52,30 +56,25 @@ namespace DiskAnalyzer.Services
 
         public void Scan(string path, CancellationToken tsToken)
         {
-            rootNode.GetChild(path)?.CleanupNode();
             var queue = new Queue<DirectoryInfo>();
             queue.Enqueue(new DirectoryInfo(path));
 
             while (queue.Count > 0)
             {
-                if (tsToken.IsCancellationRequested)
-                    return;
-
+                tsToken.ThrowIfCancellationRequested();
                 var r = queue.Dequeue();
                 try
                 {
                     foreach (var d in r.GetDirectories())
                     {
-                        if (tsToken.IsCancellationRequested)
-                            return;
+                        tsToken.ThrowIfCancellationRequested();
                         rootNode.GetOrCreateChild(d.FullName).UpdateInfo(FileType.Directory, 0, d.CreationTime);
                         queue.Enqueue(d);
                     }
 
                     foreach (var f in r.GetFiles())
                     {
-                        if (tsToken.IsCancellationRequested)
-                            return;
+                        tsToken.ThrowIfCancellationRequested();
                         rootNode.GetOrCreateChild(f.FullName).UpdateInfo(FileType.File, f.Length, f.CreationTime);
                     }
                 }
@@ -84,6 +83,11 @@ namespace DiskAnalyzer.Services
                     logger.Warning(e, "Error access to folder {folder}", r.FullName);
                 }
             }
+        }
+
+        public void Cleanup(string path)
+        {
+            rootNode.GetOrCreateChild(path).CleanupNode();
         }
 
         private FileSystemWatcher CreateWatcher([NotNull] string path)
@@ -104,7 +108,7 @@ namespace DiskAnalyzer.Services
         {
             logger.Debug("A new file has been renamed from {oldName} to {name}", e.OldName, e.Name);
 
-            rootNode.GetOrCreateChild(e.OldFullPath).UpdateInfo(FileType.Unknown, newSize: 0, newCreationTime: null);
+            rootNode.GetOrCreateChild(e.OldFullPath).CleanupNode();
             var fileInfo = new FileInfo(e.FullPath);
             var dirInfo = new DirectoryInfo(e.FullPath);
             fileInfo.Refresh();
@@ -128,7 +132,7 @@ namespace DiskAnalyzer.Services
         {
             logger.Debug("A new file has been deleted - {name} ", e.Name);
 
-            rootNode.GetOrCreateChild(e.FullPath).UpdateInfo(FileType.Unknown, newSize: 0, newCreationTime: null);
+            rootNode.GetOrCreateChild(e.FullPath).CleanupNode();
         }
 
         private void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)

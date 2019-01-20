@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using DiskAnalyzer.Model;
 using JetBrains.Annotations;
 
@@ -8,9 +9,9 @@ namespace DiskAnalyzer.Statistics
     [UsedImplicitly]
     public class TopDirectoriesBySizeCalculator : IStatisticsCalculator
     {
-        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node)
+        public IEnumerable<StatisticsItem> Calculate(IFileSystemNode node, CancellationToken token)
         {
-            return node.Search()
+            return node.Search(token)
                        .Where(r => r.FileType == FileType.Directory &&
                                    0.95 * r.Size > r
                                                    .Children.Where(z => z.FileType == FileType.Directory)
