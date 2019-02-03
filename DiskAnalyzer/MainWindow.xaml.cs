@@ -21,7 +21,6 @@ namespace DiskAnalyzer
         private readonly IStatisticsService statisticsService;
 
         private string currentDrive;
-        private volatile bool inProcess;
         private CancellationTokenSource statisticsCancellationTokenSource;
         private CancellationTokenSource treeCancellationTokenSource;
 
@@ -57,25 +56,16 @@ namespace DiskAnalyzer
             TreeGrid.Root = new TreeGridNodeViewModel(driveNode);
             SetStatus($"Scanning drive: {drive} ...", loader: true);
 
-            var ts = new CancellationTokenSource();            
+            var ts = new CancellationTokenSource();
             Task.Delay(TimeSpan.FromMilliseconds(100), ts.Token)
+                .ContinueWith(t => fileSystemService.Scan(drive, ts.Token), ts.Token)
                 .ContinueWith(t =>
                               {
-                                  try
-                                  {
-                                      inProcess = true;
-                                      fileSystemService.Scan(drive, ts.Token);
-                                  }
-                                  finally
-                                  {
-                                      inProcess = false;
-                                  }
-                              }, ts.Token)
-                .ContinueWith(t =>
-                              {
-                                  SetStatus("Ready", loader: false);
-
                                   TreeGrid.Root = new TreeGridNodeViewModel(driveNode);
+                                  if (ts.IsCancellationRequested)
+                                      return;
+
+                                  SetStatus("Ready", loader: false);
                                   CalcStatistics(driveNode);
                               }, ts.Token, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
 
@@ -104,12 +94,7 @@ namespace DiskAnalyzer
             statisticsCancellationTokenSource?.Cancel();
             var ts = new CancellationTokenSource();
 
-            SetStatus($"Analyzing: {node.GetFullPath()} ...", loader: true);
-
-            statisticsService.CalculateAsync(node, ts.Token, SynchronizationContext.Current)
-                             .ContinueWith(a => SetStatus("Ready", loader: false),
-                                           ts.Token, TaskContinuationOptions.None,
-                                           TaskScheduler.FromCurrentSynchronizationContext());
+            statisticsService.CalculateAsync(node, ts.Token, SynchronizationContext.Current);
 
             statisticsCancellationTokenSource = ts;
         }
@@ -135,8 +120,6 @@ namespace DiskAnalyzer
 
         private void TreeGridItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (inProcess) return;
-
             var treeViewItem = sender as SharpTreeViewItem;
             if (treeViewItem == null) return;
 
